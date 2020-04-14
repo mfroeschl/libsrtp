@@ -1,4 +1,4 @@
-/* config_in.h.  Generated from configure.in by autoheader.  */
+/* config_in.h.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
@@ -17,6 +17,9 @@
 
 /* Define to redirect logging to stdout. */
 #undef ERR_REPORTING_STDOUT
+
+/* Define this to use AES-GCM. */
+#undef GCM
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -42,6 +45,12 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
+/* Define to 1 if you have the `nspr4' library (-lnspr4). */
+#undef HAVE_LIBNSPR4
+
+/* Define to 1 if you have the `nss3' library (-lnss3). */
+#undef HAVE_LIBNSS3
+
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
@@ -57,7 +66,10 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
-/* Define to 1 if you have the `pcap' library (-lpcap) */
+/* Define to 1 if you have the <nss.h> header file. */
+#undef HAVE_NSS_H
+
+/* Define to 1 if you have the `winpcap' library (-lwpcap) */
 #undef HAVE_PCAP
 
 /* Define to 1 if you have the `sigaction' function. */
@@ -120,8 +132,14 @@
 /* Define to use X86 inlined assembly code */
 #undef HAVE_X86
 
+/* Define this to use NSS crypto. */
+#undef NSS
+
 /* Define this to use OpenSSL crypto. */
 #undef OPENSSL
+
+/* Define this if OPENSSL_cleanse is broken. */
+#undef OPENSSL_CLEANSE_BROKEN
 
 /* Define this to use OpenSSL KDF for SRTP. */
 #undef OPENSSL_KDF
