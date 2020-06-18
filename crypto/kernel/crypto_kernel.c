@@ -85,28 +85,34 @@ srtp_err_status_t srtp_crypto_kernel_init()
     /* initialize error reporting system */
     status = srtp_err_reporting_init();
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not init error reporting.", status);
         return status;
     }
 
     /* load debug modules */
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_crypto_kernel);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load crypto kernel debug module.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_auth);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load auth debug module.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_cipher);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load cipher debug module.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_stat);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load stat debug module.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_alloc);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load alloc debug module.", status);
         return status;
     }
 
@@ -114,40 +120,48 @@ srtp_err_status_t srtp_crypto_kernel_init()
     status = srtp_crypto_kernel_load_cipher_type(&srtp_null_cipher,
                                                  SRTP_NULL_CIPHER);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_NULL_CIPHER cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_cipher_type(&srtp_aes_icm_128,
                                                  SRTP_AES_ICM_128);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_AES_ICM_128 cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_cipher_type(&srtp_aes_icm_256,
                                                  SRTP_AES_ICM_256);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_AES_ICM_256 cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_aes_icm);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load aes icm debug module.", status);
         return status;
     }
 #ifdef GCM
     status = srtp_crypto_kernel_load_cipher_type(&srtp_aes_icm_192,
                                                  SRTP_AES_ICM_192);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_AES_ICM_192 cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_cipher_type(&srtp_aes_gcm_128,
                                                  SRTP_AES_GCM_128);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_AES_GCM_128 cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_cipher_type(&srtp_aes_gcm_256,
                                                  SRTP_AES_GCM_256);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_AES_GCM_256 cipher.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_aes_gcm);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load aes gcm debug module.", status);
         return status;
     }
 #endif
@@ -155,14 +169,17 @@ srtp_err_status_t srtp_crypto_kernel_init()
     /* load auth func types */
     status = srtp_crypto_kernel_load_auth_type(&srtp_null_auth, SRTP_NULL_AUTH);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_NULL_AUTH auth.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_auth_type(&srtp_hmac, SRTP_HMAC_SHA1);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load SRTP_HMAC_SHA1 auth.", status);
         return status;
     }
     status = srtp_crypto_kernel_load_debug_module(&srtp_mod_hmac);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_init() Could not load hmac debug module.", status);
         return status;
     }
 
@@ -282,16 +299,19 @@ static inline srtp_err_status_t srtp_crypto_kernel_do_load_cipher_type(
 
     /* defensive coding */
     if (new_ct == NULL) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() No cipher_type.");
         return srtp_err_status_bad_param;
     }
 
     if (new_ct->id != id) {
+        error_print2(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() ID mismatch: lhs = %u, rhs = %u", new_ct->id, id);
         return srtp_err_status_bad_param;
     }
 
     /* check cipher type by running self-test */
     status = srtp_cipher_type_self_test(new_ct);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() cipher type self test failed.", status);
         return status;
     }
 
@@ -300,16 +320,19 @@ static inline srtp_err_status_t srtp_crypto_kernel_do_load_cipher_type(
     while (ctype != NULL) {
         if (id == ctype->id) {
             if (!replace) {
+                error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() Same ID, but replace is disabled.");
                 return srtp_err_status_bad_param;
             }
             status =
                 srtp_cipher_type_test(new_ct, ctype->cipher_type->test_data);
             if (status) {
+                error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() cipher type test failed.", status);
                 return status;
             }
             new_ctype = ctype;
             break;
         } else if (new_ct == ctype->cipher_type) {
+            error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() Already exists.");
             return srtp_err_status_bad_param;
         }
         ctype = ctype->next;
@@ -321,6 +344,7 @@ static inline srtp_err_status_t srtp_crypto_kernel_do_load_cipher_type(
         new_ctype = (srtp_kernel_cipher_type_t *)srtp_crypto_alloc(
             sizeof(srtp_kernel_cipher_type_t));
         if (new_ctype == NULL) {
+            error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_cipher_type() Could not allocate new cipher_type.");
             return srtp_err_status_alloc_fail;
         }
         new_ctype->next = crypto_kernel.cipher_type_list;
@@ -359,16 +383,19 @@ srtp_err_status_t srtp_crypto_kernel_do_load_auth_type(
 
     /* defensive coding */
     if (new_at == NULL) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() No auth_type.");
         return srtp_err_status_bad_param;
     }
 
     if (new_at->id != id) {
+        error_print2(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() ID mismatch: lhs = %u, rhs = %u", new_at->id, id);
         return srtp_err_status_bad_param;
     }
 
     /* check auth type by running self-test */
     status = srtp_auth_type_self_test(new_at);
     if (status) {
+        error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() auth type self test failed.", status);
         return status;
     }
 
@@ -377,15 +404,18 @@ srtp_err_status_t srtp_crypto_kernel_do_load_auth_type(
     while (atype != NULL) {
         if (id == atype->id) {
             if (!replace) {
+                error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() Same ID, but replace is disabled.");
                 return srtp_err_status_bad_param;
             }
             status = srtp_auth_type_test(new_at, atype->auth_type->test_data);
             if (status) {
+                error_status_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() auth type test failed.", status);
                 return status;
             }
             new_atype = atype;
             break;
         } else if (new_at == atype->auth_type) {
+            error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() Already exists.");
             return srtp_err_status_bad_param;
         }
         atype = atype->next;
@@ -397,6 +427,7 @@ srtp_err_status_t srtp_crypto_kernel_do_load_auth_type(
         new_atype = (srtp_kernel_auth_type_t *)srtp_crypto_alloc(
             sizeof(srtp_kernel_auth_type_t));
         if (new_atype == NULL) {
+            error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_do_load_auth_type() Could not allocate new auth_type.");
             return srtp_err_status_alloc_fail;
         }
 
@@ -455,11 +486,13 @@ srtp_err_status_t srtp_crypto_kernel_alloc_cipher(srtp_cipher_type_id_t id,
      * any ciphers - this is a bit extra-paranoid
      */
     if (crypto_kernel.state != srtp_crypto_kernel_state_secure) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_alloc_cipher() crypto_kernel is not yet initialized.");
         return srtp_err_status_init_fail;
     }
 
     ct = srtp_crypto_kernel_get_cipher_type(id);
     if (!ct) {
+        error_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_alloc_cipher() Could not get cipher_type for id %u.", id);
         return srtp_err_status_fail;
     }
 
@@ -495,11 +528,13 @@ srtp_err_status_t srtp_crypto_kernel_alloc_auth(srtp_auth_type_id_t id,
      * any auth functions - this is a bit extra-paranoid
      */
     if (crypto_kernel.state != srtp_crypto_kernel_state_secure) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_alloc_auth() crypto_kernel is not yet initialized.");
         return srtp_err_status_init_fail;
     }
 
     at = srtp_crypto_kernel_get_auth_type(id);
     if (!at) {
+        error_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_alloc_auth() Could not get auth_type for id %u.", id);
         return srtp_err_status_fail;
     }
 
@@ -513,6 +548,7 @@ srtp_err_status_t srtp_crypto_kernel_load_debug_module(
 
     /* defensive coding */
     if (new_dm == NULL || new_dm->name == NULL) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_load_debug_module() No debug_module.");
         return srtp_err_status_bad_param;
     }
 
@@ -520,6 +556,7 @@ srtp_err_status_t srtp_crypto_kernel_load_debug_module(
     kdm = crypto_kernel.debug_module_list;
     while (kdm != NULL) {
         if (strncmp(new_dm->name, kdm->mod->name, 64) == 0) {
+            error_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_load_debug_module() Debug module %s already exists.", new_dm->name);
             return srtp_err_status_bad_param;
         }
         kdm = kdm->next;
@@ -530,6 +567,7 @@ srtp_err_status_t srtp_crypto_kernel_load_debug_module(
     new = (srtp_kernel_debug_module_t *)srtp_crypto_alloc(
         sizeof(srtp_kernel_debug_module_t));
     if (new == NULL) {
+        error_print0(srtp_mod_crypto_kernel, "srtp_crypto_kernel_load_debug_module() Could not allocate debug module.");
         return srtp_err_status_alloc_fail;
     }
 
@@ -557,5 +595,6 @@ srtp_err_status_t srtp_crypto_kernel_set_debug_module(const char *name, int on)
         kdm = kdm->next;
     }
 
+    error_print(srtp_mod_crypto_kernel, "srtp_crypto_kernel_load_debug_module() debug module %s not found.", name);
     return srtp_err_status_fail;
 }

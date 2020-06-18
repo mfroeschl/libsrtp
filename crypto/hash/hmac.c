@@ -74,11 +74,13 @@ static srtp_err_status_t srtp_hmac_alloc(srtp_auth_t **a,
      * than 20 bytes yet
      */
     if (key_len > 20) {
+        error_print(srtp_mod_hmac, "srtp_hmac_alloc() Invalid key length: %d", key_len);
         return srtp_err_status_bad_param;
     }
 
     /* check output length - should be less than 20 bytes */
     if (out_len > 20) {
+        error_print(srtp_mod_hmac, "srtp_hmac_alloc() Invalid output length: %d", out_len);
         return srtp_err_status_bad_param;
     }
 
@@ -86,6 +88,7 @@ static srtp_err_status_t srtp_hmac_alloc(srtp_auth_t **a,
     pointer = (uint8_t *)srtp_crypto_alloc(sizeof(srtp_hmac_ctx_t) +
                                            sizeof(srtp_auth_t));
     if (pointer == NULL) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_alloc() Coult not allocate structures.");
         return srtp_err_status_alloc_fail;
     }
 
@@ -124,6 +127,7 @@ static srtp_err_status_t srtp_hmac_init(void *statev,
      * than 20 bytes yet
      */
     if (key_len > 20) {
+        error_print(srtp_mod_hmac, "srtp_hmac_init() Invalid key length: %d", key_len);
         return srtp_err_status_bad_param;
     }
 
@@ -141,7 +145,7 @@ static srtp_err_status_t srtp_hmac_init(void *statev,
         ((uint8_t *)state->opad)[i] = 0x5c;
     }
 
-    debug_print(srtp_mod_hmac, "ipad: %s",
+    info_print(srtp_mod_hmac, "ipad: %s",
                 srtp_octet_string_hex_string(ipad, 64));
 
     /* initialize sha1 context */
@@ -191,6 +195,7 @@ static srtp_err_status_t srtp_hmac_compute(void *statev,
 
     /* check tag length, return error if we can't provide the value expected */
     if (tag_len > 20) {
+        error_print(srtp_mod_hmac, "srtp_hmac_compute() Invalid tag length: %d", tag_len);
         return srtp_err_status_bad_param;
     }
 

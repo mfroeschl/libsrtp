@@ -178,11 +178,15 @@ srtp_err_status_t srtp_stream_init_from_ekt(srtp_stream_t stream,
      * NOTE: at present, we only support a single ekt_policy at a time.
      */
     if (stream->ekt->data->spi !=
-        srtcp_packet_get_ekt_spi(srtcp_hdr, pkt_octet_len))
+        srtcp_packet_get_ekt_spi(srtcp_hdr, pkt_octet_len)) {
+        error_print0(mod_srtp, "srtp_stream_init_from_ekt() SPI mismatch.");
         return srtp_err_status_no_ctx;
+    }
 
-    if (stream->ekt->data->ekt_cipher_type != SRTP_EKT_CIPHER_AES_128_ECB)
+    if (stream->ekt->data->ekt_cipher_type != SRTP_EKT_CIPHER_AES_128_ECB) {
+        error_print(mod_srtp, "srtp_stream_init_from_ekt() Invalid cipher_type: %d", stream->ekt->data->ekt_cipher_type);
         return srtp_err_status_bad_param;
+    }
 
     /* decrypt the Encrypted Master Key field */
     master_key = srtcp_packet_get_emk_location(srtcp_hdr, pkt_octet_len);
@@ -195,12 +199,16 @@ srtp_err_status_t srtp_stream_init_from_ekt(srtp_stream_t stream,
     /* set the SRTP ROC */
     roc = srtcp_packet_get_ekt_roc(srtcp_hdr, pkt_octet_len);
     err = srtp_rdbx_set_roc(&stream->rtp_rdbx, roc);
-    if (err)
+    if (err) {
+        error_status_print(mod_srtp, "srtp_stream_init_from_ekt() Could not set SRTP ROC.", err);
         return err;
+    }
 
     err = srtp_stream_init(stream, &srtp_policy);
-    if (err)
+    if (err) {
+        error_status_print(mod_srtp, "srtp_stream_init_from_ekt() Could not init SRTP stream.", err);
         return err;
+    }
 
     return srtp_err_status_ok;
 }

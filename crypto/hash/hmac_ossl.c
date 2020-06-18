@@ -74,6 +74,7 @@ static srtp_err_status_t srtp_hmac_alloc(srtp_auth_t **a,
 
     /* check output length - should be less than 20 bytes */
     if (out_len > SHA1_DIGEST_SIZE) {
+        error_print(srtp_mod_hmac, "srtp_hmac_alloc() Invalid output length: %d", out_len);
         return srtp_err_status_bad_param;
     }
 
@@ -87,23 +88,30 @@ static srtp_err_status_t srtp_hmac_alloc(srtp_auth_t **a,
         pointer = (uint8_t *)srtp_crypto_alloc(sizeof(HMAC_CTX) +
                                                sizeof(srtp_auth_t));
         if (pointer == NULL) {
+            error_print0(srtp_mod_hmac, "srtp_hmac_alloc() Coult not allocate structures.");
             return srtp_err_status_alloc_fail;
         }
         *a = (srtp_auth_t *)pointer;
         (*a)->state = pointer + sizeof(srtp_auth_t);
         new_hmac_ctx = (HMAC_CTX *)((*a)->state);
 
-        HMAC_CTX_init(new_hmac_ctx);
+        if (HMAC_CTX_init(new_hmac_ctx) == 0) {
+            error_print0(srtp_mod_hmac, "srtp_hmac_alloc() HMAC_CTX_init() failed.");
+            srtp_err_log_openssl_errors();
+        }
     }
 
 #else
     *a = (srtp_auth_t *)srtp_crypto_alloc(sizeof(srtp_auth_t));
     if (*a == NULL) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_alloc() Coult not allocate.");
         return srtp_err_status_alloc_fail;
     }
 
     (*a)->state = HMAC_CTX_new();
     if ((*a)->state == NULL) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_alloc() Coult create context.");
+        srtp_err_log_openssl_errors();
         srtp_crypto_free(*a);
         *a = NULL;
         return srtp_err_status_alloc_fail;
@@ -148,8 +156,11 @@ static srtp_err_status_t srtp_hmac_start(void *statev)
 {
     HMAC_CTX *state = (HMAC_CTX *)statev;
 
-    if (HMAC_Init_ex(state, NULL, 0, NULL, NULL) == 0)
+    if (HMAC_Init_ex(state, NULL, 0, NULL, NULL) == 0) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_start() HMAC_Init_ex() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_auth_fail;
+    }
 
     return srtp_err_status_ok;
 }
@@ -160,8 +171,11 @@ static srtp_err_status_t srtp_hmac_init(void *statev,
 {
     HMAC_CTX *state = (HMAC_CTX *)statev;
 
-    if (HMAC_Init_ex(state, key, key_len, EVP_sha1(), NULL) == 0)
+    if (HMAC_Init_ex(state, key, key_len, EVP_sha1(), NULL) == 0) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_init() HMAC_Init_ex() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_auth_fail;
+    }
 
     return srtp_err_status_ok;
 }
@@ -175,8 +189,11 @@ static srtp_err_status_t srtp_hmac_update(void *statev,
     debug_print(srtp_mod_hmac, "input: %s",
                 srtp_octet_string_hex_string(message, msg_octets));
 
-    if (HMAC_Update(state, message, msg_octets) == 0)
+    if (HMAC_Update(state, message, msg_octets) == 0) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_update() HMAC_Update() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_auth_fail;
+    }
 
     return srtp_err_status_ok;
 }
@@ -194,18 +211,27 @@ static srtp_err_status_t srtp_hmac_compute(void *statev,
 
     /* check tag length, return error if we can't provide the value expected */
     if (tag_len > SHA1_DIGEST_SIZE) {
+        error_print(srtp_mod_hmac, "srtp_hmac_compute() Invalid tag length: %d", tag_len);
         return srtp_err_status_bad_param;
     }
 
     /* hash message, copy output into H */
-    if (HMAC_Update(state, message, msg_octets) == 0)
+    if (HMAC_Update(state, message, msg_octets) == 0) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_compute() HMAC_Update() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_auth_fail;
+    }
 
-    if (HMAC_Final(state, hash_value, &len) == 0)
+    if (HMAC_Final(state, hash_value, &len) == 0) {
+        error_print0(srtp_mod_hmac, "srtp_hmac_compute() HMAC_Final() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_auth_fail;
+    }
 
-    if (len < tag_len)
+    if (len < tag_len) {
+        error_print2(srtp_mod_hmac, "srtp_hmac_compute() len (%u) < tag_len (%d).", len, tag_len);
         return srtp_err_status_auth_fail;
+    }
 
     /* copy hash_value to *result */
     for (i = 0; i < tag_len; i++) {

@@ -97,6 +97,7 @@ srtp_err_status_t srtp_install_err_report_handler(
  */
 
 void srtp_err_report(srtp_err_reporting_level_t level, const char *format, ...);
+void srtp_err_log_openssl_errors();
 
 /*
  * debug_module_t defines a debug module
@@ -131,6 +132,24 @@ typedef struct {
                     arg1, arg2)
 
 #endif
+
+#define info_print0(mod, format)                                              \
+    srtp_err_report(srtp_err_level_info, ("%s: " format), mod.name)
+#define info_print(mod, format, arg)                                          \
+    srtp_err_report(srtp_err_level_info, ("%s: " format), mod.name, arg)
+#define info_print2(mod, format, arg1, arg2)                                  \
+    srtp_err_report(srtp_err_level_info, ("%s: " format), mod.name,           \
+                    arg1, arg2)
+
+#define error_print0(mod, format)                                              \
+    srtp_err_report(srtp_err_level_error, ("%s: " format), mod.name)
+#define error_print(mod, format, arg)                                          \
+    srtp_err_report(srtp_err_level_error, ("%s: " format), mod.name, arg)
+#define error_print2(mod, format, arg1, arg2)                                  \
+    srtp_err_report(srtp_err_level_error, ("%s: " format), mod.name,           \
+                    arg1, arg2)
+#define error_status_print(mod, message, code)                                 \
+    srtp_err_report(srtp_err_level_error, ("%s: " message " (%s [%d])"), mod.name, get_error_message(code), code)
 
 #ifdef __cplusplus
 }

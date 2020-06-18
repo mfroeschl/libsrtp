@@ -48,6 +48,7 @@
 #endif
 
 #include "rdbx.h"
+#include <inttypes.h>
 
 /*
  * from RFC 3711:
@@ -175,10 +176,12 @@ int32_t srtp_index_guess(const srtp_xtd_seq_num_t *local,
 srtp_err_status_t srtp_rdbx_init(srtp_rdbx_t *rdbx, unsigned long ws)
 {
     if (ws == 0) {
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_init() window size is 0.");
         return srtp_err_status_bad_param;
     }
 
     if (bitvector_alloc(&rdbx->bitmask, ws) != 0) {
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_init() Could not allocate bitmask.");
         return srtp_err_status_alloc_fail;
     }
 
@@ -214,6 +217,7 @@ srtp_err_status_t srtp_rdbx_set_roc(srtp_rdbx_t *rdbx, uint32_t roc)
 
     /* make sure that we're not moving backwards */
     if (roc < (rdbx->index >> 16)) {
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_set_roc() Invalid roc. roc = %u, index = %016" PRIx64, roc, rdbx->index);
         return srtp_err_status_replay_old;
     }
 
@@ -254,12 +258,14 @@ srtp_err_status_t srtp_rdbx_check(const srtp_rdbx_t *rdbx, int delta)
         return srtp_err_status_ok;
     } else if ((int)(bitvector_get_length(&rdbx->bitmask) - 1) + delta < 0) {
         /* if delta is lower than the bitmask, it's bad */
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_check() delta %d is lower than the bitmask.", delta);
         return srtp_err_status_replay_old;
     } else if (bitvector_get_bit(
                    &rdbx->bitmask,
                    (int)(bitvector_get_length(&rdbx->bitmask) - 1) + delta) ==
                1) {
         /* delta is within the window, so check the bitmask */
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_check() bitmask check failed for delta %d.", delta);
         return srtp_err_status_replay_fail;
     }
     /* otherwise, the index is okay */
@@ -373,6 +379,7 @@ srtp_err_status_t srtp_rdbx_set_roc_seq(srtp_rdbx_t *rdbx,
 
     /* make sure that we're not moving backwards */
     if (roc < (rdbx->index >> 16)) {
+        srtp_err_report(srtp_err_level_error, "rdbx: srtp_rdbx_set_roc_seq() Invalid roc. roc = %u, index = %016" PRIx64, roc, rdbx->index);
         return srtp_err_status_replay_old;
     }
 

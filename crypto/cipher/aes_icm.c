@@ -109,17 +109,20 @@ static srtp_err_status_t srtp_aes_icm_alloc(srtp_cipher_t **c,
      */
     if (key_len != SRTP_AES_ICM_128_KEY_LEN_WSALT &&
         key_len != SRTP_AES_ICM_256_KEY_LEN_WSALT) {
+        error_print(srtp_mod_aes_icm, "srtp_aes_icm_alloc() Invalid key length: %d", key_len);
         return srtp_err_status_bad_param;
     }
 
     /* allocate memory a cipher of type aes_icm */
     *c = (srtp_cipher_t *)srtp_crypto_alloc(sizeof(srtp_cipher_t));
     if (*c == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_alloc() Could not allocate cipher.");
         return srtp_err_status_alloc_fail;
     }
 
     icm = (srtp_aes_icm_ctx_t *)srtp_crypto_alloc(sizeof(srtp_aes_icm_ctx_t));
     if (icm == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_alloc() Could not allocate ICM.");
         srtp_crypto_free(*c);
         *c = NULL;
         return srtp_err_status_alloc_fail;
@@ -151,6 +154,7 @@ static srtp_err_status_t srtp_aes_icm_dealloc(srtp_cipher_t *c)
     srtp_aes_icm_ctx_t *ctx;
 
     if (c == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_dealloc() No cipher.");
         return srtp_err_status_bad_param;
     }
 
@@ -187,6 +191,7 @@ static srtp_err_status_t srtp_aes_icm_context_init(void *cv, const uint8_t *key)
         c->key_size == SRTP_AES_ICM_256_KEY_LEN_WSALT) {
         base_key_len = c->key_size - SRTP_SALT_LEN;
     } else {
+        error_print(srtp_mod_aes_icm, "srtp_aes_icm_context_init() Invalid key_size: %d", c->key_size);
         return srtp_err_status_bad_param;
     }
 
@@ -215,6 +220,7 @@ static srtp_err_status_t srtp_aes_icm_context_init(void *cv, const uint8_t *key)
     status =
         srtp_aes_expand_encryption_key(key, base_key_len, &c->expanded_key);
     if (status) {
+        error_status_print(srtp_mod_aes_icm, "srtp_aes_icm_context_init() Could not expand encryption key.", status);
         v128_set_to_zero(&c->counter);
         v128_set_to_zero(&c->offset);
         return status;
@@ -302,6 +308,7 @@ static srtp_err_status_t srtp_aes_icm_encrypt(void *cv,
 
     /* check that there's enough segment left*/
     if ((bytes_to_encr + htons(c->counter.v16[7])) > 0xffff) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_encrypt() Not enough segment left.");
         return srtp_err_status_terminus;
     }
 
