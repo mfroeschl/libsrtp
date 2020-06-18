@@ -121,17 +121,20 @@ static srtp_err_status_t srtp_aes_icm_openssl_alloc(srtp_cipher_t **c,
     if (key_len != SRTP_AES_ICM_128_KEY_LEN_WSALT &&
         key_len != SRTP_AES_ICM_192_KEY_LEN_WSALT &&
         key_len != SRTP_AES_ICM_256_KEY_LEN_WSALT) {
+        error_print(srtp_mod_aes_icm, "srtp_aes_icm_openssl_alloc() Invalid key length: %d", key_len);
         return srtp_err_status_bad_param;
     }
 
     /* allocate memory a cipher of type aes_icm */
     *c = (srtp_cipher_t *)srtp_crypto_alloc(sizeof(srtp_cipher_t));
     if (*c == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_alloc() Could not allocate cipher.");
         return srtp_err_status_alloc_fail;
     }
 
     icm = (srtp_aes_icm_ctx_t *)srtp_crypto_alloc(sizeof(srtp_aes_icm_ctx_t));
     if (icm == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_alloc() Could not allocate ICM.");
         srtp_crypto_free(*c);
         *c = NULL;
         return srtp_err_status_alloc_fail;
@@ -139,6 +142,8 @@ static srtp_err_status_t srtp_aes_icm_openssl_alloc(srtp_cipher_t **c,
 
     icm->ctx = EVP_CIPHER_CTX_new();
     if (icm->ctx == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_alloc() Could not create ICM context.");
+        srtp_err_log_openssl_errors();
         srtp_crypto_free(icm);
         srtp_crypto_free(*c);
         *c = NULL;
@@ -181,6 +186,7 @@ static srtp_err_status_t srtp_aes_icm_openssl_dealloc(srtp_cipher_t *c)
     srtp_aes_icm_ctx_t *ctx;
 
     if (c == NULL) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_dealloc() No cipher.");
         return srtp_err_status_bad_param;
     }
 
@@ -244,12 +250,15 @@ static srtp_err_status_t srtp_aes_icm_openssl_context_init(void *cv,
         evp = EVP_aes_128_ctr();
         break;
     default:
+        error_print(srtp_mod_aes_icm, "srtp_aes_icm_openssl_context_init() Invalid key_size: %d", c->key_size);
         return srtp_err_status_bad_param;
         break;
     }
 
     EVP_CIPHER_CTX_cleanup(c->ctx);
     if (!EVP_EncryptInit_ex(c->ctx, evp, NULL, key, NULL)) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_context_init() Could not init cipher.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_fail;
     } else {
         return srtp_err_status_ok;
@@ -281,6 +290,8 @@ static srtp_err_status_t srtp_aes_icm_openssl_set_iv(
                 v128_hex_string(&c->counter));
 
     if (!EVP_EncryptInit_ex(c->ctx, NULL, NULL, NULL, c->counter.v8)) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_context_init() EVP_EncryptInit_ex() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_fail;
     } else {
         return srtp_err_status_ok;
@@ -305,11 +316,15 @@ static srtp_err_status_t srtp_aes_icm_openssl_encrypt(void *cv,
     debug_print(srtp_mod_aes_icm, "rs0: %s", v128_hex_string(&c->counter));
 
     if (!EVP_EncryptUpdate(c->ctx, buf, &len, buf, *enc_len)) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_encrypt() EVP_EncryptUpdate() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_cipher_fail;
     }
     *enc_len = len;
 
     if (!EVP_EncryptFinal_ex(c->ctx, buf + len, &len)) {
+        error_print0(srtp_mod_aes_icm, "srtp_aes_icm_openssl_encrypt() EVP_EncryptFinal_ex() failed.");
+        srtp_err_log_openssl_errors();
         return srtp_err_status_cipher_fail;
     }
     *enc_len += len;

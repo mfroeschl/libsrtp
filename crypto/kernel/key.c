@@ -47,6 +47,7 @@
 #endif
 
 #include "key.h"
+#include <inttypes.h>
 
 #define soft_limit 0x10000
 
@@ -59,6 +60,7 @@ srtp_err_status_t srtp_key_limit_set(srtp_key_limit_t key,
     }
 #else
     if (s < soft_limit) {
+        srtp_err_report(srtp_err_level_error, "key: srtp_key_limit_set() seq_num too low: s = %016" PRIx64 ", soft_limit = %016" PRIx64, s, soft_limit);
         return srtp_err_status_bad_param;
     }
 #endif
@@ -71,6 +73,7 @@ srtp_err_status_t srtp_key_limit_clone(srtp_key_limit_t original,
                                        srtp_key_limit_t *new_key)
 {
     if (original == NULL) {
+        srtp_err_report(srtp_err_level_error, "key: srtp_key_limit_clone() No original.");
         return srtp_err_status_bad_param;
     }
     *new_key = original;
@@ -80,6 +83,7 @@ srtp_err_status_t srtp_key_limit_clone(srtp_key_limit_t original,
 srtp_err_status_t srtp_key_limit_check(const srtp_key_limit_t key)
 {
     if (key->state == srtp_key_state_expired) {
+        srtp_err_report(srtp_err_level_error, "key: srtp_key_limit_check() key expired.");
         return srtp_err_status_key_expired;
     }
     return srtp_err_status_ok;

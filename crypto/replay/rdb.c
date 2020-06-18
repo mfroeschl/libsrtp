@@ -78,11 +78,13 @@ srtp_err_status_t srtp_rdb_check(const srtp_rdb_t *rdb, uint32_t p_index)
 
     /* if the index appears before the window, its bad */
     if (p_index < rdb->window_start) {
+        srtp_err_report(srtp_err_level_error, "rdb: srtp_rdb_check() index (%u) < window_start (%u)", p_index, rdb->window_start);
         return srtp_err_status_replay_old;
     }
 
     /* otherwise, the index appears within the window, so check the bitmask */
     if (v128_get_bit(&rdb->bitmask, (p_index - rdb->window_start)) == 1) {
+        srtp_err_report(srtp_err_level_error, "rdb: srtp_rdb_check() bitmask failed for index = %u, window_start = %u.", p_index, rdb->window_start);
         return srtp_err_status_replay_fail;
     }
 
@@ -102,8 +104,10 @@ srtp_err_status_t srtp_rdb_add_index(srtp_rdb_t *rdb, uint32_t p_index)
 {
     unsigned int delta;
 
-    if (p_index < rdb->window_start)
+    if (p_index < rdb->window_start) {
+        srtp_err_report(srtp_err_level_error, "rdb: srtp_rdb_add_index() index (%u) < window_start (%u)", p_index, rdb->window_start);
         return srtp_err_status_replay_fail;
+    }
 
     delta = (p_index - rdb->window_start);
     if (delta < rdb_bits_in_bitmask) {
@@ -125,6 +129,7 @@ srtp_err_status_t srtp_rdb_add_index(srtp_rdb_t *rdb, uint32_t p_index)
 srtp_err_status_t srtp_rdb_increment(srtp_rdb_t *rdb)
 {
     if (rdb->window_start >= 0x7fffffff) {
+        srtp_err_report(srtp_err_level_error, "rdb: srtp_rdb_increment() window_start (%u) too big, expired.", rdb->window_start);
         return srtp_err_status_key_expired;
     }
     ++rdb->window_start;

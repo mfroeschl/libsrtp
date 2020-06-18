@@ -89,21 +89,25 @@ static srtp_err_status_t srtp_aes_gcm_openssl_alloc(srtp_cipher_t **c,
      */
     if (key_len != SRTP_AES_GCM_128_KEY_LEN_WSALT &&
         key_len != SRTP_AES_GCM_256_KEY_LEN_WSALT) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_alloc() Invalid key length: %d", key_len);
         return (srtp_err_status_bad_param);
     }
 
     if (tlen != GCM_AUTH_TAG_LEN && tlen != GCM_AUTH_TAG_LEN_8) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_alloc() Invalid tag length: %d", tlen);
         return (srtp_err_status_bad_param);
     }
 
     /* allocate memory a cipher of type aes_gcm */
     *c = (srtp_cipher_t *)srtp_crypto_alloc(sizeof(srtp_cipher_t));
     if (*c == NULL) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_alloc() Could not allocate cipher.");
         return (srtp_err_status_alloc_fail);
     }
 
     gcm = (srtp_aes_gcm_ctx_t *)srtp_crypto_alloc(sizeof(srtp_aes_gcm_ctx_t));
     if (gcm == NULL) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_alloc() Could not allocate GCM session.");
         srtp_crypto_free(*c);
         *c = NULL;
         return (srtp_err_status_alloc_fail);
@@ -111,6 +115,8 @@ static srtp_err_status_t srtp_aes_gcm_openssl_alloc(srtp_cipher_t **c,
 
     gcm->ctx = EVP_CIPHER_CTX_new();
     if (gcm->ctx == NULL) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_alloc() Could not create cipher context.");
+        srtp_err_log_openssl_errors();
         srtp_crypto_free(gcm);
         srtp_crypto_free(*c);
         *c = NULL;
@@ -188,12 +194,15 @@ static srtp_err_status_t srtp_aes_gcm_openssl_context_init(void *cv,
         evp = EVP_aes_128_gcm();
         break;
     default:
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_context_init() invalid key_size: %d", c->key_size);
         return (srtp_err_status_bad_param);
         break;
     }
 
     EVP_CIPHER_CTX_cleanup(c->ctx);
     if (!EVP_CipherInit_ex(c->ctx, evp, NULL, key, NULL, 0)) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_context_init() EVP_CipherInit_ex() failed.");
+        srtp_err_log_openssl_errors();
         return (srtp_err_status_init_fail);
     }
 
@@ -213,6 +222,7 @@ static srtp_err_status_t srtp_aes_gcm_openssl_set_iv(
 
     if (direction != srtp_direction_encrypt &&
         direction != srtp_direction_decrypt) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_set_iv() Invalid direction: %d", direction);
         return (srtp_err_status_bad_param);
     }
     c->dir = direction;
@@ -221,11 +231,15 @@ static srtp_err_status_t srtp_aes_gcm_openssl_set_iv(
                 srtp_octet_string_hex_string(iv, 12));
 
     if (!EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_SET_IVLEN, 12, 0)) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_set_iv() Could not set IV length.");
+        srtp_err_log_openssl_errors();
         return (srtp_err_status_init_fail);
     }
 
     if (!EVP_CipherInit_ex(c->ctx, NULL, NULL, NULL, iv,
                            (c->dir == srtp_direction_encrypt ? 1 : 0))) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_set_iv() Could not init cipher.");
+        srtp_err_log_openssl_errors();
         return (srtp_err_status_init_fail);
     }
 
@@ -263,10 +277,15 @@ static srtp_err_status_t srtp_aes_gcm_openssl_set_aad(void *cv,
      */
     unsigned char dummy_tag[GCM_AUTH_TAG_LEN];
     memset(dummy_tag, 0x0, GCM_AUTH_TAG_LEN);
-    EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_SET_TAG, c->tag_len, &dummy_tag);
+    if (!EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_SET_TAG, c->tag_len, &dummy_tag)) {
+        error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_set_aad() EVP_CIPHER_CTX_ctrl() failed.");
+        srtp_err_log_openssl_errors();
+    }
 
     rv = EVP_Cipher(c->ctx, NULL, aad, aad_len);
     if (rv != aad_len) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_set_aad() EVP_Cipher() failed: %d", rv);
+        srtp_err_log_openssl_errors();
         return (srtp_err_status_algo_fail);
     } else {
         return (srtp_err_status_ok);
@@ -287,6 +306,7 @@ static srtp_err_status_t srtp_aes_gcm_openssl_encrypt(void *cv,
 {
     srtp_aes_gcm_ctx_t *c = (srtp_aes_gcm_ctx_t *)cv;
     if (c->dir != srtp_direction_encrypt && c->dir != srtp_direction_decrypt) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_encrypt() Invalid direction: %d", c->dir);
         return (srtp_err_status_bad_param);
     }
 
@@ -322,7 +342,10 @@ static srtp_err_status_t srtp_aes_gcm_openssl_get_tag(void *cv,
     /*
      * Retreive the tag
      */
-    EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_GET_TAG, c->tag_len, buf);
+    if (!EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_GET_TAG, c->tag_len, buf)) {
+      error_print0(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_get_tag() EVP_CIPHER_CTX_ctrl() failed.");
+      srtp_err_log_openssl_errors();
+    }
 
     /*
      * Increase encryption length by desired tag size
@@ -344,22 +367,31 @@ static srtp_err_status_t srtp_aes_gcm_openssl_decrypt(void *cv,
                                                       unsigned char *buf,
                                                       unsigned int *enc_len)
 {
+    int rv = 0;
     srtp_aes_gcm_ctx_t *c = (srtp_aes_gcm_ctx_t *)cv;
     if (c->dir != srtp_direction_encrypt && c->dir != srtp_direction_decrypt) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_decrypt() Invalid direction: %d", c->dir);
         return (srtp_err_status_bad_param);
     }
 
     /*
      * Set the tag before decrypting
      */
-    EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_SET_TAG, c->tag_len,
-                        buf + (*enc_len - c->tag_len));
+    if (!EVP_CIPHER_CTX_ctrl(c->ctx, EVP_CTRL_GCM_SET_TAG, c->tag_len,
+                        buf + (*enc_len - c->tag_len))) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_decrypt() EVP_CIPHER_CTX_ctrl() failed: %d", rv);
+        srtp_err_log_openssl_errors();
+    }
+
     EVP_Cipher(c->ctx, buf, buf, *enc_len - c->tag_len);
 
     /*
      * Check the tag
      */
-    if (EVP_Cipher(c->ctx, NULL, NULL, 0)) {
+    rv = EVP_Cipher(c->ctx, NULL, NULL, 0);
+    if (rv) {
+        error_print(srtp_mod_aes_gcm, "srtp_aes_gcm_openssl_decrypt() EVP_Cipher() failed: %d", rv);
+        srtp_err_log_openssl_errors();
         return (srtp_err_status_auth_fail);
     }
 

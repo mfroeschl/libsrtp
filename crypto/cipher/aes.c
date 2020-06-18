@@ -1533,11 +1533,13 @@ srtp_err_status_t srtp_aes_expand_encryption_key(
         return srtp_err_status_ok;
     } else if (key_len == 24) {
         /* AES-192 not yet supported */
+        srtp_err_report(srtp_err_level_error, "aes: srtp_aes_expand_encryption_key() AES-192 not yet supported.");
         return srtp_err_status_bad_param;
     } else if (key_len == 32) {
         aes_256_expand_encryption_key(key, expanded_key);
         return srtp_err_status_ok;
     } else {
+        srtp_err_report(srtp_err_level_error, "aes: srtp_aes_expand_encryption_key() Invalid key length: %d", key_len);
         return srtp_err_status_bad_param;
     }
 }
@@ -1553,6 +1555,7 @@ srtp_err_status_t srtp_aes_expand_decryption_key(
 
     status = srtp_aes_expand_encryption_key(key, key_len, expanded_key);
     if (status) {
+        srtp_err_report(srtp_err_level_error, ("aes: srtp_aes_expand_decryption_key() Could not expand encryption key. (%s [%d])"), get_error_message(status), status);
         return status;
     }
 

@@ -65,6 +65,7 @@ srtp_err_status_t srtp_cipher_type_alloc(const srtp_cipher_type_t *ct,
                                          int tlen)
 {
     if (!ct || !ct->alloc) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_type_alloc() No cipher_type or alloc function.");
         return (srtp_err_status_bad_param);
     }
     return ((ct)->alloc((c), (key_len), (tlen)));
@@ -73,6 +74,7 @@ srtp_err_status_t srtp_cipher_type_alloc(const srtp_cipher_type_t *ct,
 srtp_err_status_t srtp_cipher_dealloc(srtp_cipher_t *c)
 {
     if (!c || !c->type) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_dealloc() Not allocated.");
         return (srtp_err_status_bad_param);
     }
     return (((c)->type)->dealloc(c));
@@ -81,6 +83,7 @@ srtp_err_status_t srtp_cipher_dealloc(srtp_cipher_t *c)
 srtp_err_status_t srtp_cipher_init(srtp_cipher_t *c, const uint8_t *key)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_init() Not initialized.");
         return (srtp_err_status_bad_param);
     }
     return (((c)->type)->init(((c)->state), (key)));
@@ -91,6 +94,7 @@ srtp_err_status_t srtp_cipher_set_iv(srtp_cipher_t *c,
                                      int direction)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_set_iv() Not initialized.");
         return (srtp_err_status_bad_param);
     }
 
@@ -113,6 +117,7 @@ srtp_err_status_t srtp_cipher_encrypt(srtp_cipher_t *c,
                                       uint32_t *num_octets_to_output)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_encrypt() Not initialized.");
         return (srtp_err_status_bad_param);
     }
 
@@ -124,6 +129,7 @@ srtp_err_status_t srtp_cipher_decrypt(srtp_cipher_t *c,
                                       uint32_t *num_octets_to_output)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_decrypt() Not initialized.");
         return (srtp_err_status_bad_param);
     }
 
@@ -135,9 +141,11 @@ srtp_err_status_t srtp_cipher_get_tag(srtp_cipher_t *c,
                                       uint32_t *tag_len)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_get_tag() Not initialized.");
         return (srtp_err_status_bad_param);
     }
     if (!((c)->type)->get_tag) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_get_tag() Operation not supported.");
         return (srtp_err_status_no_such_op);
     }
 
@@ -149,9 +157,11 @@ srtp_err_status_t srtp_cipher_set_aad(srtp_cipher_t *c,
                                       uint32_t aad_len)
 {
     if (!c || !c->type || !c->state) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_set_aad() Not initialized.");
         return (srtp_err_status_bad_param);
     }
     if (!((c)->type)->set_aad) {
+        error_print0(srtp_mod_cipher, "srtp_cipher_set_aad() Operation not supported.");
         return (srtp_err_status_no_such_op);
     }
 

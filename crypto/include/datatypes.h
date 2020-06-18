@@ -48,6 +48,7 @@
 
 #include "integers.h" /* definitions of uint32_t, et cetera   */
 #include "alloc.h"
+#include "srtp_config.h"
 
 #include <stdarg.h>
 

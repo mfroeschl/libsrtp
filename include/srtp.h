@@ -1741,6 +1741,13 @@ srtp_err_status_t srtp_get_stream_roc(srtp_t session,
                                       uint32_t ssrc,
                                       uint32_t *roc);
 
+void log_srtp_policies(const srtp_policy_t* policy);
+const char* get_error_message(const srtp_err_status_t status);
+const char* cipher_type_to_string(srtp_cipher_type_id_t cipher_type);
+const char* auth_type_to_string(srtp_auth_type_id_t auth_type);
+const char* sec_serv_to_string(const srtp_sec_serv_t sec_serv);
+
+
 /**
  * @}
  */
