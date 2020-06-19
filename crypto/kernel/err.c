@@ -50,6 +50,11 @@
 #include "datatypes.h"
 #include <string.h>
 
+#ifdef OPENSSL
+#include <openssl/err.h>
+#define ERROR_MESSAGE_SIZE 256
+#endif
+
 /* srtp_err_file is the FILE to which errors are reported */
 
 static FILE *srtp_err_file = NULL;
@@ -105,4 +110,16 @@ void srtp_err_report(srtp_err_reporting_level_t level, const char *format, ...)
         }
         va_end(args);
     }
+}
+
+void srtp_err_log_openssl_errors() {
+#ifdef OPENSSL
+  char buffer[ERROR_MESSAGE_SIZE];
+  int error = ERR_get_error();
+  while ( error ) {
+    ERR_error_string_n(error, buffer, sizeof(buffer));
+    PJ_LOG(1, ("OpenSSL Error", buffer));
+    error = ERR_get_error();
+  }
+#endif
 }
